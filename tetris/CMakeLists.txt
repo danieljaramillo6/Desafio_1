@@ -5,7 +5,9 @@ project(tetris LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(tetris main.cpp)
+add_executable(tetris main.cpp
+    mov_piezas.h
+    mov_piezas.cpp)
 
 include(GNUInstallDirs)
 install(TARGETS tetris
