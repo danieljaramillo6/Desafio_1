@@ -89,47 +89,41 @@ unsigned char* create_piece(){
     }
 }
 
-unsigned char** Eliminar_fila(unsigned char** board,int rows,int cols){
-    bool cero;
-    for (int i=0;i<rows;i++){
+unsigned char** Eliminar_fila(unsigned char** board,int rows,int cols)
+{
+    for(int i=0;i<rows;i++)
+    {
         bool full=true;
-        for(int j=0;j<cols;j++){
-            if(board[i][j]!=255){
+
+        for(int j=0;j<cols;j++)
+        {
+            if(board[i][j]!=255)
+            {
                 full=false;
                 break;
             }
         }
-        if (full){
-            for(int j=0;j<cols;j++){
+
+        if(full)
+        {
+            for(int j=0;j<cols;j++)
                 board[i][j]=0;
-            }
+
             int c=i;
-            while(true){
 
-            for(int j=0;j<cols;j++){
-                if(board[c-1][j]!=0){
-                    char* copia=new char[cols];
-                    for(int m=0;m<cols;m++){
-                        copia[m]=board[c-1][m];
-                    }
-                    for(int m=0;m<cols;m++){
-                        board[c-1][m]=0;
-                    }
-                    for(int m=0;m<cols;m++){
-                        board[c][m]=copia[m];
-                    }
-                    delete[] copia;
-                    cero=false;
-                }else{
-                    cero=true;
+            while(c>0)
+            {
+                for(int m=0;m<cols;m++)
+                {
+                    board[c][m]=board[c-1][m];
+                    board[c-1][m]=0;
                 }
-                c--;
-                }
-            if(cero)break;
 
+                c--;   // ← ahora está en el lugar correcto
+            }
         }
     }
-}
+
     return board;
 }
 
@@ -250,4 +244,33 @@ bool move_down(unsigned char** board,int rows,int cols,int x,int& y,unsigned cha
     }
     y = coor_y;
     return true;
+}
+unsigned char** set_piece(unsigned char** board,int rows,int cols,int x,int y,unsigned char* piece){
+
+    for(int i=0;i<=y;i++){
+        if(y-i<4){
+            unsigned char* copia=new unsigned char[cols];
+            for(int j=0;j<cols;j++){
+                copia[j]=0;
+            }
+            for(int j=0;j<cols;j++){
+                for(int c=7;c>=0;c--){
+                    int col=j*8+(7-c);
+                    int px=col-x;
+                    if(px >= 0 && px < 4){
+                        int row=i+3-y;
+                        int bit=(piece[row] >> (7-px)) & 1;
+                        if(bit){
+                            copia[j] |= (1 << c);
+                        }
+                    }
+                }
+            }
+            for(int j=0;j<cols;j++){
+                board[i][j] |= copia[j];
+            }
+            delete[] copia;
+        }
+    }
+    return board;
 }
