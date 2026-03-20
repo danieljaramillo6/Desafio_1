@@ -127,122 +127,79 @@ unsigned char** Eliminar_fila(unsigned char** board,int rows,int cols)
     return board;
 }
 
-bool move_right(unsigned char** board,int rows,int cols,int& x,int y,unsigned char* piece)
+bool hay_colision(unsigned char** board, int rows, int cols_bytes, unsigned char* piece, int px, int py)
 {
-    int coor_x;
-
-    coor_x = x + 1; // la coordenada a mover a la derecha ->
-
-    for(int py = 0 ; py<4 ; py++ ){ // recorre la fila de la figura
-
-        unsigned char row = piece[py];
-
-        for(int px = 0 ; px < 8; px++){ // recorre los bits de la fila
-
-            int bit = (row >> (7 - px)) & 1;
-
-            if(bit){ // revisa si hay un bloque si hay debe ser bit = 1
-
-                int bx = coor_x + px, by = y + py ; //calcula la posicion del tablero
-
-                // revisa el limite de la pared derecha
-                if(bx >= cols * 8)
-                    return false;
-
-                // revisa el suelo
-                if(by >= rows)
-                    return false;
-
-                int byte = bx / 8; // calcular byte del tablero de la columna
-                int bitpos = 7 - (bx % 8); // mover el bit hasta la ultima posicion
-
-                if((board[by][byte] >> bitpos)& 1) // calcula si hay espacio disponible 1 = lleno, 0 = vacio
-                {
-                    return false;
-                }
-
-
-            }
-        }
-    }
-    x = coor_x ;
-    return true;
-}
-
-bool move_left(unsigned char** board,int rows,int cols,int& x,int y,unsigned char* piece)
-{
-    int coor_x;
-    coor_x = x - 1;
-
-    for(int py = 0 ; py<4 ; py++ ){ // recorre la fila de la figura
-
-        unsigned char row = piece[py];
-
-        for(int px = 0 ; px < 8; px++){ // recorre los bits de la fila
-
-            int bit = (row >> (7 - px)) & 1;
-
-            if(bit){// revisa si hay un bloque si hay debe ser bit = 1
-
-                int bx = coor_x + px, by = y + py ; //calcula la posicion del tablero
-
-                //revisar limite de la parde izquierda
-                if(bx < 0){
-
-                    return false;
-                }// limite del suelo
-                if(by >= rows){
-                    return false;
-                }
-                int byte = bx / 8; // calcular byte del tablero de la columna
-                int bitpos = 7 - (bx % 8); // mover el bit hasta la ultima posicion
-
-                if((board[by][byte] >> bitpos)& 1) // calcula si hay espacio disponible 1 = lleno, 0 = vacio
-                {
-                    return false;
-                }
-
-            }
-
-        }
-    }
-    x = coor_x ;
-    return true;
-}
-
-bool move_down(unsigned char** board,int rows,int cols,int x,int& y,unsigned char* piece)
-{
-    int coor_y;
-    coor_y = y + 1;
-
-    for(int py = 0; py < 4; py++)
+    for(int row = 0; row < 4; row++)
     {
-        unsigned char row = piece[py];
-
-        for(int px = 0; px < 8; px++)
+        for(int col = 0; col < 4; col++)
         {
+            int bit = (piece[row] >> (7 - col)) & 1;
+            if(!bit) continue;
 
-            int bit = (row >> (7 - px)) & 1;
+            int board_x = px + col;
+            int board_y = py - (3 - row);
 
-            if(bit)
+
+
+            if(board_x < 0 || board_x >= cols_bytes * 8)
             {
-                int bx = x + px, by = coor_y + py ;
+                return true;
+            }
+            if(board_y >= rows)
+            {
+                return true;
+            }
+            if (board_y < 0) {
 
-                if(by >= rows){
-                    return false;
-                }
-                int byte = bx / 8; // calcular byte del tablero de la columna
-                int bitpos = 7 - (bx % 8); // mover el bit hasta la ultima posicion
+                continue;
+            }
 
-                if((board[by][byte] >> bitpos)& 1) // calcula si hay espacio disponible 1 = lleno, 0 = vacio
-                {
-                    return false;
-                }
+            int byte   = board_x / 8;
+
+            int bitpos = 7 - (board_x % 8);
+
+            if((board[board_y][byte] >> bitpos) & 1)
+            {
+                return true;
+
             }
         }
-
     }
-    y = coor_y;
+
+    return false;
+}
+
+bool move_left(unsigned char** board, int rows, int cols_bytes, int& x, int y, unsigned char* piece)
+{
+    if(hay_colision(board, rows, cols_bytes, piece, x - 1, y))
+    {
+        return false;
+    }
+
+    x--;
+    return true;
+}
+
+bool move_right(unsigned char** board, int rows, int cols_bytes, int& x, int y, unsigned char* piece)
+{
+    if(hay_colision(board, rows, cols_bytes, piece, x + 1, y))
+    {
+        return false;
+    }
+
+    x++;
+    return true;
+}
+
+bool move_down(unsigned char** board, int rows, int cols_bytes, int x, int& y, unsigned char* piece)
+{
+
+    if(hay_colision(board, rows, cols_bytes, piece, x, y + 1))
+    {
+        return false;
+    }
+
+    y++;
     return true;
 }
 unsigned char** set_piece(unsigned char** board,int rows,int cols,int x,int y,unsigned char* piece){
@@ -273,4 +230,67 @@ unsigned char** set_piece(unsigned char** board,int rows,int cols,int x,int y,un
         }
     }
     return board;
+}
+void rotate_piece(unsigned char* piece, int& x, int& y, unsigned char** board, int rows, int cols_bytes)
+{
+    unsigned char copy_piece[4] = {0,0,0,0};
+
+    // Rotacion 90 grados
+    for(int py = 0; py < 4; py++)
+    {
+        unsigned char row = piece[py];
+        for(int px = 0; px < 4; px++)
+        {
+            int bit = (row >> (7 - px)) & 1;
+            if(bit)
+            {
+                int new_x = 3 - py;
+                int new_y = px;
+                copy_piece[new_y] |= (1 << (7 - new_x));
+            }
+        }
+    }
+
+    // Empujar hacia la izquierda
+    bool left_empty = true;
+    while(left_empty)
+    {
+        for(int i = 0; i < 4; i++)
+        {
+            if(copy_piece[i] & 0x80)
+            {
+                left_empty = false;
+
+                break;
+            }
+        }
+
+        if(left_empty)
+        {
+
+            for(int i = 0; i < 4; i++)
+            {
+
+                copy_piece[i] <<= 1;
+            }
+        }
+    }
+
+    // Empujar hacia abajo
+    while(copy_piece[3] == 0)
+    {
+        for(int i = 3; i > 0; i--)
+        {
+            copy_piece[i] = copy_piece[i-1];
+        }
+        copy_piece[0] = 0;
+    }
+
+    // Solo aplicar si no hay colision con la pieza rotada
+    if(!hay_colision(board, rows, cols_bytes, copy_piece, x, y))
+    {
+        for(int i = 0; i < 4; i++)
+            piece[i] = copy_piece[i];
+    }
+    // Si hay colision, piece queda intacta y la rotacion se cancela
 }
