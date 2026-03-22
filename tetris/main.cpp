@@ -1,11 +1,11 @@
 #include <iostream>
-#include "mov_piezas.h"
+#include "piece.h"
+#include "board.h"
 using namespace std;
 
 int main() {
     char act;
     int rows, cols;
-
     while (true) {
         cout << "Ingrese el numero de filas (minimo 8): " << endl;
         cin >> rows;
@@ -18,22 +18,22 @@ int main() {
     cols = cols / 8;
     unsigned char** board = create_board(rows, cols);
     int x = (cols * 8) / 2 - 1;
-    int y = 0;                   // era "y=0", ahora la pieza entra desde arriba
+    int y = 0;
+    int score=0;
     unsigned char* piece = create_piece();
 
-    int ter = 0;                  // era "int ter;" sin inicializar (valor basura)
+    bool ter=true;
 
-    while (true) {
-        if (ter) break;
+    while (ter) {
         print_board(board, rows, cols, x, y, piece);
-        cout << "------------------------------------------------------------------------------" << endl;
-        cout << "W: rotar | A: Mover izquierda | D: Mover derecha | S: Mover abajo (fijar)" << endl;
-        cout << "------------------------------------------------------------------------------" << endl;
+        cout << "------------------------------------------------------------------------------------------------------------" << endl;
+        cout << "W: rotar | A: Mover izquierda | D: Mover derecha | S: Mover abajo (fijar) | Q: Terminar Juego  | Puntaje: " <<score<< endl;
+        cout << "------------------------------------------------------------------------------------------------------------" << endl;
         cin >> act;
 
         switch (act) {
         case 'W': case 'w':
-            rotate_piece(piece,x,y,board,rows,cols);
+            if(!rotate_piece(piece,x,y,board,rows,cols))cout << "No se pudo Rotar"<<endl;
             break;
         case 'A': case 'a':
             if (!move_left(board, rows, cols, x, y, piece)) cout << "No se pudo mover" << endl;
@@ -43,16 +43,11 @@ int main() {
             break;
         case 'S': case 's':
             if (!move_down(board,rows,cols,x,y,piece)) {
-                board = set_piece(board, rows, cols, x, y, piece);
-                delete[] piece;
-                piece = create_piece();
-                x = (cols * 8) / 2 - 1;
-                y = 0;           // resetear a -3 igual que al inicio
-                board = Eliminar_fila(board, rows, cols);
+                ter=act_piece(board,piece,x,y,rows,cols,score);
             }
             break;
         case 'Q': case 'q':
-            ter = 1;
+            ter = false;
             break;
         default:
             cout << "Ingrese accion valida" << endl;
